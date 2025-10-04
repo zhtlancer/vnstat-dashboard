@@ -33,7 +33,7 @@ RUN npm ci --omit=dev
 COPY backend/ ./
 COPY --from=frontend-build /app/frontend/build /app/frontend-build
 
-ENV FRONTEND_DIR=../frontend-build
+ENV FRONTEND_DIR=frontend-build
 ENV PORT=8050
 
 EXPOSE 8050
