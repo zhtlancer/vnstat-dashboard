@@ -50,7 +50,12 @@ docker build -t vnstat-dashboard .
 Make sure to use `--privileged` so that `vnstat` inside the container can access system data:
 
 ```bash
-docker run -d   --name vnstat-dashboard   --privileged   -p 8050:8050   -v /var/lib/vnstat:/var/lib/vnstat:ro   kshitizb/vnstat-dashboard
+docker run -d \
+  --name vnstat-dashboard \
+  --privileged \
+  -p 8050:8050 \
+  -v /var/lib/vnstat:/var/lib/vnstat:ro \
+  kshitizb/vnstat-dashboard
 ```
 
 ### 4. Access the Dashboard
@@ -79,7 +84,7 @@ services:
     ports:
       - "8050:8050"
     environment:
-      - PORT=8050
+      - NODE_ENV=production
       - FRONTEND_DIR=frontend-build
       - ALLOWED_PREFIXES=eth,enp,wlan,wlp,tailscale,docker
       # Optional explicit interfaces:
