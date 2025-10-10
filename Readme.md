@@ -73,7 +73,6 @@ http://localhost:8050
 A ready-to-use `docker-compose.yml` is included:
 
 ```yaml
-version: "3.9"
 services:
   vnstat-dashboard:
     build:

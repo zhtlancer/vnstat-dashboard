@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   vnstat-dashboard:
     # Use either the local Dockerfile (build) OR a prebuilt image (image)
@@ -17,7 +15,7 @@ services:
     ports:
       - "8050:8050"
     environment:
-      - PORT=8050
+      - NODE_ENV=production
       - FRONTEND_DIR=frontend-build
       # Dynamic allow-list options used by your server.js:
       - ALLOWED_PREFIXES=eth,enp,wlan,wlp,tailscale,docker
