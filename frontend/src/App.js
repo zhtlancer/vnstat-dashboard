@@ -40,27 +40,46 @@ const TABS = [
   { id: 'Yearly', label: 'Yearly', icon: TrendingUp }
 ];
 
-const INTERFACES = [
-  { id: 'eth0', label: 'Ethernet (eth0)', icon: Network },
-  { id: 'wlan0', label: 'Wifi (wlan0)', icon: Network },
-  { id: 'docker0', label: 'Docker (docker0)', icon: Server },
-  { id: 'tailscale0', label: 'Tailscale (tailscale0)', icon: Network }
-];
-
 function App() {
-  const [selected, setSelected] = useState('eth0');
+  const [selected, setSelected] = useState('');
   const [tab, setTab] = useState('Summary');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [interfaces, setInterfaces] = useState([]);
+  const [ifaceLoading, setIfaceLoading] = useState(true);
 
   useEffect(() => {
+    fetch('/api/interfaces')
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.interfaces)) {
+          setInterfaces(data.interfaces);
+        }
+      })
+      .catch(err => console.error('Failed to fetch interfaces:', err))
+      .finally(() => setIfaceLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (interfaces.length === 0) return;
+    if (!selected || !interfaces.includes(selected)) {
+      setSelected(interfaces[0]);
+    }
+  }, [interfaces, selected]);
+
+  useEffect(() => {
+    if (!selected) return;
     setLoading(true);
     fetch(`/api/vnstat/${selected}`)
       .then(res => res.json())
       .then(setData)
+      .catch(err => {
+        console.error('Failed to fetch vnstat data:', err);
+        setData(null);
+      })
       .finally(() => setLoading(false));
-  }, [selected]);
 
+  }, [selected]);
 
   const ifaceInfo = data && data.interfaces ? data.interfaces[0] : null;
   const traffic = ifaceInfo ? ifaceInfo.traffic : null;
@@ -168,17 +187,27 @@ function App() {
           </label>
           <div className="flex flex-row items-center gap-4 justify-center">
             <Network className="h-5 w-5 text-gray-400" />
-            <select
-              value={selected}
-              onChange={e => setSelected(e.target.value)}
-              className="w-full max-w-xs bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none"
-            >
-              {INTERFACES.map(iface => (
-                <option key={iface.id} value={iface.id}>
-                  {iface.label}
-                </option>
-              ))}
-            </select>
+            {ifaceLoading ? (
+              <span className="text-gray-400 text-sm">Loading interfaces...</span>
+            ) : (
+              <select
+                value={selected}
+                onChange={e => setSelected(e.target.value)}
+                className="w-full max-w-xs bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none"
+                disabled={ifaceLoading || interfaces.length === 0}
+              >
+                {interfaces.length > 0 ? (
+                  interfaces.map(iface => (
+                    <option key={iface} value={iface}>
+                      {iface}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No interfaces found</option>
+                )}
+              </select>
+            )}
+
           </div>
         </div>
 
