@@ -1,27 +1,8 @@
 services:
   vnstat-dashboard:
-    # Use either the local Dockerfile (build) OR a prebuilt image (image)
-    build:
-      context: .
-      dockerfile: Dockerfile
-      # Uncomment to force a platform (usually not needed if your image is multi-arch)
-      # platforms:
-      #   - linux/amd64
-      #   - linux/arm64
-    # image: kshitizb/vnstat-dashboard:latest   # <- use this instead of "build:" if pulling from Docker Hub
-
-    container_name: vnstat-dashboard
-    privileged: true               # vnStat needs access to network stats in many setups
-    ports:
-      - "8050:8050"
-    environment:
-      - NODE_ENV=production
-      - FRONTEND_DIR=frontend-build
-      # Dynamic allow-list options used by your server.js:
-      - ALLOWED_PREFIXES=eth,enp,wlan,wlp,tailscale,docker
-      # If you want to hard-pin specific interfaces, uncomment:
-      # - ALLOWED_INTERFACES=eth0,wlan0,tailscale0,docker0
+    image: kshitizb/vnstat-dashboard:latest
+    network_mode: host
+    privileged: true
     volumes:
-      # Read-only mount of the host's vnStat DB so the app can read real stats
       - /var/lib/vnstat:/var/lib/vnstat:ro
     restart: unless-stopped

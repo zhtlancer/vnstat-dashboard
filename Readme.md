@@ -53,7 +53,7 @@ Make sure to use `--privileged` so that `vnstat` inside the container can access
 docker run -d \
   --name vnstat-dashboard \
   --privileged \
-  -p 8050:8050 \
+  --network host \
   -v /var/lib/vnstat:/var/lib/vnstat:ro \
   kshitizb/vnstat-dashboard
 ```
@@ -75,19 +75,9 @@ A ready-to-use `docker-compose.yml` is included:
 ```yaml
 services:
   vnstat-dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: vnstat-dashboard
+    image: kshitizb/vnstat-dashboard:latest
+    network_mode: host
     privileged: true
-    ports:
-      - "8050:8050"
-    environment:
-      - NODE_ENV=production
-      - FRONTEND_DIR=frontend-build
-      - ALLOWED_PREFIXES=eth,enp,wlan,wlp,tailscale,docker
-      # Optional explicit interfaces:
-      # - ALLOWED_INTERFACES=eth0,wlan0,docker0
     volumes:
       - /var/lib/vnstat:/var/lib/vnstat:ro
     restart: unless-stopped
