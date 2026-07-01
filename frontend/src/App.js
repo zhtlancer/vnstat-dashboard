@@ -32,6 +32,68 @@ function formatMonthYear(year, month) {
   return `${months[month - 1]} ${year}`;
 }
 
+function periodSeconds(row, period) {
+  if (!row?.date) return 0;
+
+  const { year, month } = row.date;
+
+  if (period === 'hour') {
+    return 3600;
+  }
+
+  if (period === 'day') {
+    return 86400;
+  }
+
+  if (period === 'month') {
+    return Math.round((new Date(year, month, 1) - new Date(year, month - 1, 1)) / 1000);
+  }
+
+  if (period === 'year') {
+    return Math.round((new Date(year + 1, 0, 1) - new Date(year, 0, 1)) / 1000);
+  }
+
+  return 0;
+}
+
+function isCurrentEstimatePeriod(row, period, updated) {
+  const duration = periodSeconds(row, period);
+  if (!row?.timestamp || !duration || !updated) return false;
+  return updated >= row.timestamp && updated < row.timestamp + duration;
+}
+
+function getTrafficEstimate(row, period, ifaceInfo) {
+  if (!row?.timestamp || !ifaceInfo?.updated?.timestamp) return null;
+  if (!row.rx || !row.tx) return null;
+
+  const updated = ifaceInfo.updated.timestamp;
+  if (!isCurrentEstimatePeriod(row, period, updated)) return null;
+
+  const created = ifaceInfo.created?.timestamp || 0;
+  const periodStart = row.timestamp;
+  let elapsed = updated - periodStart;
+  let duration = periodSeconds(row, period);
+
+  if (created > periodStart) {
+    const offset = created - periodStart;
+    if (elapsed > offset && duration > offset) {
+      elapsed -= offset;
+      duration -= offset;
+    }
+  }
+
+  if (elapsed <= 0 || duration <= 0) return null;
+
+  const rx = Math.trunc((row.rx / elapsed) * duration);
+  const tx = Math.trunc((row.tx / elapsed) * duration);
+
+  return {
+    rx,
+    tx,
+    total: rx + tx,
+  };
+}
+
 const TABS = [
   { id: 'Summary', label: 'Summary', icon: Activity },
   { id: 'Hourly', label: 'Hourly', icon: Clock },
@@ -159,6 +221,11 @@ function App() {
     ? traffic.fiveminute.slice(-10).reverse()
     : [];
 
+  const hourlyEstimate = hourly.length > 0 ? getTrafficEstimate(hourly[0], 'hour', ifaceInfo) : null;
+  const dailyEstimate = daily.length > 0 ? getTrafficEstimate(daily[0], 'day', ifaceInfo) : null;
+  const monthlyEstimate = monthly.length > 0 ? getTrafficEstimate(monthly[0], 'month', ifaceInfo) : null;
+  const yearlyEstimate = yearly.length > 0 ? getTrafficEstimate(yearly[0], 'year', ifaceInfo) : null;
+
   const getLabel = (row, type) => {
     if (type === 'hourly') {
       const date = new Date(row.date.year, row.date.month - 1, row.date.day, row.time.hour);
@@ -175,25 +242,55 @@ function App() {
     return '';
   };
 
-  const graphData = (rows, type) => rows.map(row => ({
-    name: getLabel(row, type),
-    RX: row.rx ? row.rx : 0,
-    TX: row.tx ? row.tx : 0,
-    Total: row.rx && row.tx ? row.rx + row.tx : 0,
-  }));
+  const graphData = (rows, type, estimate) => rows.map((row, index) => {
+    const isEstimateTarget = estimate && index === rows.length - 1;
+
+    return {
+      name: getLabel(row, type),
+      RX: row.rx ? row.rx : 0,
+      TX: row.tx ? row.tx : 0,
+      Total: row.rx && row.tx ? row.rx + row.tx : 0,
+      estimateRX: isEstimateTarget ? estimate.rx : null,
+      estimateTX: isEstimateTarget ? estimate.tx : null,
+    };
+  });
+
+  const getChartRows = () => {
+    if (tab === 'Hourly') return [...hourly.slice(-24)].reverse();
+    if (tab === 'Daily') return [...daily].reverse();
+    if (tab === 'Monthly') return [...monthly].reverse();
+    if (tab === 'Yearly') return [...yearly].reverse();
+    return [];
+  };
+
+  const getChartEstimate = () => {
+    if (tab === 'Hourly') return hourlyEstimate;
+    if (tab === 'Daily') return dailyEstimate;
+    if (tab === 'Monthly') return monthlyEstimate;
+    if (tab === 'Yearly') return yearlyEstimate;
+    return null;
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
+    const visiblePayload = payload
+      ? payload.filter(entry => entry.value !== null && entry.value !== undefined)
+      : [];
+    const labelMap = {
+      estimateRX: 'RX Estimate',
+      estimateTX: 'TX Estimate',
+    };
+
+    if (active && visiblePayload.length) {
       return (
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-xl">
           <p className="text-gray-300 text-sm mb-2">{label}</p>
-          {payload.map((entry, index) => (
+          {visiblePayload.map((entry, index) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-300">{entry.dataKey}:</span>
+              <span className="text-gray-300">{labelMap[entry.dataKey] || entry.dataKey}:</span>
               <span className="text-white font-medium">{formatBytes(entry.value)}</span>
             </div>
           ))}
@@ -201,6 +298,20 @@ function App() {
       );
     }
     return null;
+  };
+
+  const EstimateCard = ({ title, estimate, accent = 'text-yellow-400' }) => {
+    if (!estimate) return null;
+
+    return (
+      <div className="bg-gray-900 rounded-md p-4 border border-gray-700">
+        <div className="text-sm text-gray-400 mb-1">{title}</div>
+        <div className={`text-xl font-bold ${accent}`}>{formatBytes(estimate.total)}</div>
+        <div className="text-sm text-gray-400 mt-1">
+          RX {formatBytes(estimate.rx)} / TX {formatBytes(estimate.tx)}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -374,6 +485,20 @@ function App() {
                 </div>
               </div>
 
+              {(dailyEstimate || monthlyEstimate || yearlyEstimate) && (
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-yellow-400" />
+                    Estimated Usage
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <EstimateCard title="Today" estimate={dailyEstimate} />
+                    <EstimateCard title="This Month" estimate={monthlyEstimate} accent="text-purple-400" />
+                    <EstimateCard title="This Year" estimate={yearlyEstimate} accent="text-orange-400" />
+                  </div>
+                </div>
+              )}
+
               {/* Recent Traffic Table */}
               <div>
                 <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -432,11 +557,9 @@ function App() {
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart
                     data={graphData(
-                      tab === "Hourly" ? [...hourly.slice(-24)].reverse() :
-                        tab === "Daily" ? [...daily].reverse() :
-                          tab === "Monthly" ? [...monthly].reverse() :
-                            tab === "Yearly" ? [...yearly].reverse() : [],
-                      tab.toLowerCase()
+                      getChartRows(),
+                      tab.toLowerCase(),
+                      getChartEstimate()
                     )}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
@@ -472,6 +595,24 @@ function App() {
                       dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
                     />
+                    <Line
+                      type="monotone"
+                      dataKey="estimateRX"
+                      stroke="#F59E0B"
+                      strokeWidth={0}
+                      dot={{ fill: '#F59E0B', stroke: '#FDE68A', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, stroke: '#FDE68A', strokeWidth: 2 }}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="estimateTX"
+                      stroke="#C084FC"
+                      strokeWidth={0}
+                      dot={{ fill: '#C084FC', stroke: '#E9D5FF', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8, stroke: '#E9D5FF', strokeWidth: 2 }}
+                      isAnimationActive={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -489,6 +630,12 @@ function App() {
                       <span className="text-sm text-gray-400 mb-1">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(daily[0].tx)}</span>
                     </div>
+                    {dailyEstimate && (
+                      <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                        <span className="text-sm text-gray-400 mb-1">Estimate:</span>
+                        <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes(dailyEstimate.total)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -505,6 +652,12 @@ function App() {
                       <span className="text-sm text-gray-400">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(monthly[0].tx)}</span>
                     </div>
+                    {monthlyEstimate && (
+                      <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                        <span className="text-sm text-gray-400">Estimate:</span>
+                        <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes(monthlyEstimate.total)}</span>
+                      </div>
+                    )}
                   </div>
 
                 </div>
@@ -522,6 +675,12 @@ function App() {
                       <span className="text-sm text-gray-400">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(yearly[0].tx)}</span>
                     </div>
+                    {yearlyEstimate && (
+                      <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                        <span className="text-sm text-gray-400">Estimate:</span>
+                        <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes(yearlyEstimate.total)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
