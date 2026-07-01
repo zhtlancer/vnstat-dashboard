@@ -129,6 +129,16 @@ body {
   min-width: max-content;
 }
 
+.estimate-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.estimate-card {
+  min-width: 0;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -344,6 +354,12 @@ body {
   .overview-grid,
   .traffic-overview-layout,
   .time-overview-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .estimate-grid {
     grid-template-columns: 1fr;
   }
 }

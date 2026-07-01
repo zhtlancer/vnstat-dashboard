@@ -317,7 +317,7 @@ function App() {
     if (!estimate) return null;
 
     return (
-      <div className="bg-gray-900 rounded-md p-4 border border-gray-700">
+      <div className="estimate-card bg-gray-900 rounded-md p-4 border border-gray-700">
         <div className="text-sm text-gray-400 mb-1">{title}</div>
         <div className={`text-xl font-bold ${accent}`}>{formatBytes(estimate.total)}</div>
         <div className="text-sm text-gray-400 mt-1">
@@ -520,7 +520,7 @@ function App() {
                     <TrendingUp className="h-5 w-5 text-yellow-400" />
                     Estimated Usage
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="estimate-grid">
                     <EstimateCard title="Today" estimate={dailyEstimate} />
                     <EstimateCard title="This Month" estimate={monthlyEstimate} accent="text-purple-400" />
                     <EstimateCard title="This Year" estimate={yearlyEstimate} accent="text-orange-400" />
