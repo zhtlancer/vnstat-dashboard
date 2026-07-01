@@ -263,6 +263,7 @@ function App() {
       Total: row.rx && row.tx ? row.rx + row.tx : 0,
       estimateRX: isEstimateTarget ? estimate.rx : null,
       estimateTX: isEstimateTarget ? estimate.tx : null,
+      estimateTotal: isEstimateTarget ? estimate.total : null,
     };
   });
 
@@ -289,6 +290,7 @@ function App() {
     const labelMap = {
       estimateRX: 'RX Estimate',
       estimateTX: 'TX Estimate',
+      estimateTotal: 'Total Estimate',
     };
 
     if (active && visiblePayload.length) {
@@ -450,47 +452,63 @@ function App() {
                 </h2>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Download className="h-5 w-5 text-green-400" />
-                      <span className="text-sm text-gray-400">Total Received</span>
-                    </div>
-                    <div className="text-2xl font-bold text-green-400">
-                      {formatBytes(traffic.total.rx)}
+                <div className="overview-grid grid grid-cols-1 xl:grid-cols-2 gap-4 mb-8 items-stretch">
+                  <div className="overview-card bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="traffic-overview-layout grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                      <div className="overview-subcard traffic-total-card bg-gray-900 rounded-md p-5 border border-gray-700 flex flex-col justify-center">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Activity className="h-5 w-5 text-yellow-400 shrink-0" />
+                          <span className="text-sm font-medium text-gray-400">Total Traffic</span>
+                        </div>
+                        <div className="overview-total-value text-4xl font-bold text-yellow-400 leading-tight text-right">
+                          {formatBytes((traffic.total.rx || 0) + (traffic.total.tx || 0))}
+                        </div>
+                      </div>
+
+                      <div className="traffic-detail-stack grid grid-rows-2 gap-4 h-full">
+                        <div className="overview-subcard traffic-detail-card bg-gray-900 rounded-md p-4 border border-gray-700 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Download className="h-5 w-5 text-green-400 shrink-0" />
+                            <span className="text-sm font-medium text-gray-400">Received</span>
+                          </div>
+                          <div className="overview-detail-value text-xl font-bold text-green-400 leading-tight text-right">{formatBytes(traffic.total.rx)}</div>
+                        </div>
+
+                        <div className="overview-subcard traffic-detail-card bg-gray-900 rounded-md p-4 border border-gray-700 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Upload className="h-5 w-5 text-blue-400 shrink-0" />
+                            <span className="text-sm font-medium text-gray-400">Sent</span>
+                          </div>
+                          <div className="overview-detail-value text-xl font-bold text-blue-400 leading-tight text-right">{formatBytes(traffic.total.tx)}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Upload className="h-5 w-5 text-blue-400" />
-                      <span className="text-sm text-gray-400">Total Sent</span>
-                    </div>
-                    <div className="text-2xl font-bold text-blue-400">
-                      {formatBytes(traffic.total.tx)}
-                    </div>
-                  </div>
+                  <div className="overview-card bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="time-overview-layout grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                      <div className="overview-subcard time-detail-card bg-gray-900 rounded-md p-4 border border-gray-700">
+                        <div className="flex items-center gap-3 mb-4">
+                          <Calendar className="h-5 w-5 text-purple-400 shrink-0" />
+                          <span className="text-sm font-medium text-gray-400">Created</span>
+                        </div>
+                        <div className="overview-date-value text-lg font-semibold text-purple-400 leading-snug">
+                          {formatDate(ifaceInfo.created.date)}
+                        </div>
+                      </div>
 
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Calendar className="h-5 w-5 text-purple-400" />
-                      <span className="text-sm text-gray-400">Created</span>
-                    </div>
-                    <div className="text-lg font-semibold text-purple-400">
-                      {formatDate(ifaceInfo.created.date)}
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Clock className="h-5 w-5 text-orange-400" />
-                      <span className="text-sm text-gray-400">Last Updated</span>
-                    </div>
-                    <div className="text-lg font-semibold text-orange-400">
-                      {formatDate(ifaceInfo.updated.date)}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {formatTime(ifaceInfo.updated.time)}
+                      <div className="overview-subcard time-detail-card bg-gray-900 rounded-md p-4 border border-gray-700">
+                        <div className="flex items-center gap-3 mb-4">
+                          <Clock className="h-5 w-5 text-orange-400 shrink-0" />
+                          <span className="text-sm font-medium text-gray-400">Last Updated</span>
+                        </div>
+                        <div className="overview-date-value text-lg font-semibold text-orange-400 leading-snug">
+                          {formatDate(ifaceInfo.updated.date)}
+                        </div>
+                        <div className="text-sm text-gray-400 mt-1">
+                          {formatTime(ifaceInfo.updated.time)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -534,6 +552,12 @@ function App() {
                             <span className="label-text">Sent</span>
                           </div>
                         </th>
+                        <th className="text-left p-4 font-medium text-gray-300 border-b border-gray-700">
+                          <div className="flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-yellow-400" />
+                            <span className="label-text">Total</span>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -550,6 +574,9 @@ function App() {
                           </td>
                           <td className="p-4 border-b border-gray-800 font-medium text-blue-400">
                             {formatBytes(row.tx)}
+                          </td>
+                          <td className="p-4 border-b border-gray-800 font-medium text-yellow-400">
+                            {formatBytes((row.rx || 0) + (row.tx || 0))}
                           </td>
                         </tr>
                       ))}
@@ -608,6 +635,14 @@ function App() {
                     />
                     <Line
                       type="monotone"
+                      dataKey="Total"
+                      stroke="#F97316"
+                      strokeWidth={3}
+                      dot={{ fill: '#F97316', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, stroke: '#F97316', strokeWidth: 2 }}
+                    />
+                    <Line
+                      type="monotone"
                       dataKey="estimateRX"
                       stroke="#F59E0B"
                       strokeWidth={0}
@@ -622,6 +657,15 @@ function App() {
                       strokeWidth={0}
                       dot={{ fill: '#C084FC', stroke: '#E9D5FF', strokeWidth: 2, r: 6 }}
                       activeDot={{ r: 8, stroke: '#E9D5FF', strokeWidth: 2 }}
+                      isAnimationActive={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="estimateTotal"
+                      stroke="#FACC15"
+                      strokeWidth={0}
+                      dot={{ fill: '#FACC15', stroke: '#FEF3C7', strokeWidth: 2, r: 7 }}
+                      activeDot={{ r: 9, stroke: '#FEF3C7', strokeWidth: 2 }}
                       isAnimationActive={false}
                     />
                   </LineChart>
@@ -640,6 +684,10 @@ function App() {
                     <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
                       <span className="text-sm text-gray-400 mb-1">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(daily[0].tx)}</span>
+                    </div>
+                    <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                      <span className="text-sm text-gray-400 mb-1">Total:</span>
+                      <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes((daily[0].rx || 0) + (daily[0].tx || 0))}</span>
                     </div>
                     {dailyEstimate && (
                       <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
@@ -663,6 +711,10 @@ function App() {
                       <span className="text-sm text-gray-400">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(monthly[0].tx)}</span>
                     </div>
+                    <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                      <span className="text-sm text-gray-400">Total:</span>
+                      <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes((monthly[0].rx || 0) + (monthly[0].tx || 0))}</span>
+                    </div>
                     {monthlyEstimate && (
                       <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
                         <span className="text-sm text-gray-400">Estimate:</span>
@@ -685,6 +737,10 @@ function App() {
                     <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
                       <span className="text-sm text-gray-400">Upload:</span>
                       <span className="text-xl font-bold text-blue-400 ml-2">{formatBytes(yearly[0].tx)}</span>
+                    </div>
+                    <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
+                      <span className="text-sm text-gray-400">Total:</span>
+                      <span className="text-xl font-bold text-yellow-400 ml-2">{formatBytes((yearly[0].rx || 0) + (yearly[0].tx || 0))}</span>
                     </div>
                     {yearlyEstimate && (
                       <div className="flex flex-col bg-gray-900 rounded-md p-4 border border-gray-700 min-w-[120px] items-center">
