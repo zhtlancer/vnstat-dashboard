@@ -107,6 +107,7 @@ function App() {
   const DEFAULT_TAB = 'Summary';
   const CONFIG_KEY = 'vnstat_config';
   const LAST_TAB_KEY = 'vnstat_last_tab';
+  const LAST_INTERFACE_KEY = 'vnstat_last_interface';
 
   // Config state (source of truth)
   const [config, setConfig] = useState(() => {
@@ -124,7 +125,7 @@ function App() {
     return localStorage.getItem(LAST_TAB_KEY) || DEFAULT_TAB;
   });
 
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(() => localStorage.getItem(LAST_INTERFACE_KEY) || '');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [interfaces, setInterfaces] = useState([]);
@@ -139,6 +140,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem(LAST_TAB_KEY, tab);
   }, [tab]);
+
+  // Persist last selected interface
+  useEffect(() => {
+    if (selected) {
+      localStorage.setItem(LAST_INTERFACE_KEY, selected);
+    }
+  }, [selected]);
 
   // React to config changes (MAIN FIX)
   useEffect(() => {
@@ -166,7 +174,10 @@ function App() {
   useEffect(() => {
     if (interfaces.length === 0) return;
     if (!selected || !interfaces.includes(selected)) {
-      setSelected(interfaces[0]);
+      const storedInterface = localStorage.getItem(LAST_INTERFACE_KEY);
+      setSelected(storedInterface && interfaces.includes(storedInterface)
+        ? storedInterface
+        : interfaces[0]);
     }
   }, [interfaces, selected]);
 
