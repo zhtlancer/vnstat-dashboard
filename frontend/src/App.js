@@ -313,6 +313,22 @@ function App() {
     return null;
   };
 
+  const EstimateDot = ({ cx, cy, value, fill, stroke, r = 6 }) => {
+    if (cx == null || cy == null || value == null) return null;
+
+    return (
+      <circle
+        className="estimate-dot"
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={2}
+      />
+    );
+  };
+
   const EstimateCard = ({ title, estimate, accent = 'text-yellow-400' }) => {
     if (!estimate) return null;
 
@@ -624,6 +640,8 @@ function App() {
                       strokeWidth={3}
                       dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                     <Line
                       type="monotone"
@@ -632,6 +650,8 @@ function App() {
                       strokeWidth={3}
                       dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                     <Line
                       type="monotone"
@@ -640,33 +660,38 @@ function App() {
                       strokeWidth={3}
                       dot={{ fill: '#F97316', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, stroke: '#F97316', strokeWidth: 2 }}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                     <Line
                       type="monotone"
                       dataKey="estimateRX"
                       stroke="#F59E0B"
                       strokeWidth={0}
-                      dot={{ fill: '#F59E0B', stroke: '#FDE68A', strokeWidth: 2, r: 6 }}
+                      dot={(props) => <EstimateDot {...props} fill="#F59E0B" stroke="#FDE68A" r={6} />}
                       activeDot={{ r: 8, stroke: '#FDE68A', strokeWidth: 2 }}
-                      isAnimationActive={false}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                     <Line
                       type="monotone"
                       dataKey="estimateTX"
                       stroke="#C084FC"
                       strokeWidth={0}
-                      dot={{ fill: '#C084FC', stroke: '#E9D5FF', strokeWidth: 2, r: 6 }}
+                      dot={(props) => <EstimateDot {...props} fill="#C084FC" stroke="#E9D5FF" r={6} />}
                       activeDot={{ r: 8, stroke: '#E9D5FF', strokeWidth: 2 }}
-                      isAnimationActive={false}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                     <Line
                       type="monotone"
                       dataKey="estimateTotal"
                       stroke="#FACC15"
                       strokeWidth={0}
-                      dot={{ fill: '#FACC15', stroke: '#FEF3C7', strokeWidth: 2, r: 7 }}
+                      dot={(props) => <EstimateDot {...props} fill="#FACC15" stroke="#FEF3C7" r={7} />}
                       activeDot={{ r: 9, stroke: '#FEF3C7', strokeWidth: 2 }}
-                      isAnimationActive={false}
+                      animationDuration={1500}
+                      animationEasing="ease-out"
                     />
                   </LineChart>
                 </ResponsiveContainer>
