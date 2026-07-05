@@ -292,6 +292,14 @@ function App() {
       estimateTX: 'TX Estimate',
       estimateTotal: 'Total Estimate',
     };
+    const colorMap = {
+      RX: '#10B981',
+      TX: '#3B82F6',
+      Total: '#F97316',
+      estimateRX: '#F59E0B',
+      estimateTX: '#C084FC',
+      estimateTotal: '#FACC15',
+    };
 
     if (active && visiblePayload.length) {
       return (
@@ -300,8 +308,14 @@ function App() {
           {visiblePayload.map((entry, index) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.color }}
+                aria-hidden="true"
+                style={{
+                  width: '0.75rem',
+                  height: '0.75rem',
+                  borderRadius: '9999px',
+                  backgroundColor: colorMap[entry.dataKey] || entry.color,
+                  flexShrink: 0,
+                }}
               />
               <span className="text-gray-300">{labelMap[entry.dataKey] || entry.dataKey}:</span>
               <span className="text-white font-medium">{formatBytes(entry.value)}</span>
