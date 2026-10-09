@@ -4,6 +4,9 @@ services:
     image: vnstat-dashboard:latest
     ports:
       - "8050:8050"
+    env_file:
+      - path: .env.auth   # optional, see "Authentication" in the README
+        required: false
     volumes:
       - /var/lib/vnstat:/var/lib/vnstat:ro
     read_only: true

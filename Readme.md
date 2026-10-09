@@ -83,6 +83,9 @@ services:
     image: vnstat-dashboard:latest
     ports:
       - "8050:8050"
+    env_file:
+      - path: .env.auth   # optional, see "Authentication" below
+        required: false
     volumes:
       - /var/lib/vnstat:/var/lib/vnstat:ro
     read_only: true
@@ -111,6 +114,34 @@ docker compose up -d --build
 | `FRONTEND_DIR` | Path to built frontend | `frontend-build` |
 | `ALLOWED_PREFIXES` | Comma-separated list of allowed interface prefixes | `eth,enp,wlan,wlp,tailscale,docker` |
 | `ALLOWED_INTERFACES` | Explicit interface names (overrides prefix detection) | *(none)* |
+| `AUTH_USER` | Username for HTTP Basic auth | *(none, auth disabled)* |
+| `AUTH_PASSWORD_HASH` | scrypt hash of the password, `scrypt:<salt>:<hash>` | *(none, auth disabled)* |
+
+---
+
+## 🔒 Authentication
+
+The dashboard can require a username and password (HTTP Basic auth). It is disabled unless both `AUTH_USER` and `AUTH_PASSWORD_HASH` are set; if only one is set, or the hash is malformed, the server refuses to start instead of running unprotected. `/healthz` stays open for health checks.
+
+1. Generate the password hash (the password is read without echo and never stored):
+
+   ```bash
+   docker run --rm -it vnstat-dashboard node hash-password.js
+   ```
+
+2. Put the result into `.env.auth` next to `docker-compose.yaml` and restrict its permissions:
+
+   ```bash
+   cat > .env.auth <<'EOF'
+   AUTH_USER=admin
+   AUTH_PASSWORD_HASH=scrypt:...:...
+   EOF
+   chmod 600 .env.auth
+   ```
+
+3. Recreate the container: `docker compose up -d --force-recreate`.
+
+Basic auth sends the password with every request, only Base64-encoded. Over plain HTTP anyone on the same network can read it, so access the dashboard over an encrypted channel (HTTPS reverse proxy, VPN such as Tailscale/WireGuard, or an SSH tunnel) when the network is not trusted.
 
 ---
 
