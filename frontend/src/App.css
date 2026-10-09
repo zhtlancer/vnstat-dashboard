@@ -32,21 +32,6 @@ body {
   padding: 0 1rem;
 }
 
-.github {
-  display: flex;
-  justify-content: end;
-  align-items: center;
-  gap: 2px;
-}
-
-.github-icon {
-  color: white;
-  text-decoration: none; 
-  display: inline-flex; 
-  align-items: center; 
-  gap: 4px;
-}
-
 /* Overview card layout */
 .overview-grid {
   display: grid;

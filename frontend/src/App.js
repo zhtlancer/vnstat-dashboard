@@ -3,7 +3,7 @@ import './App.css';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
-import { Network, Activity, Calendar, Clock, TrendingUp, Download, Upload, Server, Github } from 'lucide-react';
+import { Network, Activity, Calendar, Clock, TrendingUp, Download, Upload, Server } from 'lucide-react';
 import { HourlyTable, DailyTable, MonthlyTable, YearlyTable } from './components/TrafficTable';
 
 
@@ -366,13 +366,6 @@ function App() {
             Network Traffic Dashboard
           </h1>
           <p className="text-gray-400">Monitor your network interface statistics in real-time</p>
-        </div>
-        <div class="github">
-          <a class="github-icon" href="https://github.com/Kshitiz-b/vnstat-dashboard" target="_blank" rel="noreferrer">
-            <Github class="h-5 w-5" />
-            <span>Kshitiz-b</span>
-          </a>
-
         </div>
 
         {/* Interface + View Controls */}
