@@ -1,7 +1,8 @@
 const express = require('express');
-const { exec, execSync } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 const path = require('path');
 const app = express();
+app.disable('x-powered-by');
 
 // ----- Dynamic interface allowlist -----
 const ALLOWED_PREFIXES = (process.env.ALLOWED_PREFIXES || 'eth,enp,wlan,wlp,tailscale,docker')
@@ -27,10 +28,11 @@ if (ENV_IFACES.length) {
   ALLOWED_INTERFACES = ENV_IFACES;
 } else {
   try {
-    const out = execSync('vnstat --iflist', { encoding: 'utf8' });
-    // work with either "Available interfaces:" or "interfaces:"
-    const line = out.split('\n').find(l => /interfaces:/i.test(l));
-    const listPart = line ? line.replace(/^.*interfaces:\s*/i, '') : '';
+    // read interfaces from the database, so no access to the host's network namespace is needed
+    const out = execFileSync('vnstat', ['--dbiflist'], { encoding: 'utf8' });
+    // e.g. "Interfaces in database: eth0 wlan0"
+    const line = out.split('\n').find(l => /interfaces[^:]*:/i.test(l));
+    const listPart = line ? line.replace(/^[^:]*interfaces[^:]*:\s*/i, '') : '';
     if (listPart) {
       ALLOWED_INTERFACES = listPart
         .split(/\s+/)
@@ -61,9 +63,10 @@ app.get('/api/vnstat/:iface', (req, res) => {
   if (!ALLOWED_SET.has(iface)) {
     return res.status(400).json({ error: 'Invalid interface' });
   }
-  exec(`vnstat -i ${iface} --json`, (error, stdout, stderr) => {
+  execFile('vnstat', ['-i', iface, '--json'], (error, stdout, stderr) => {
     if (error) {
-      return res.status(500).json({ error: stderr || error.message });
+      console.error(`vnstat failed for ${iface}:`, stderr || error.message);
+      return res.status(500).json({ error: 'Failed to query vnstat.' });
     }
     try {
       const data = JSON.parse(stdout);

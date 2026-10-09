@@ -18,10 +18,9 @@ RUN npm run build
 # =====================
 # STAGE 2: Set up Node backend with built frontend
 # =====================
-FROM alpine:3.21.3
+FROM alpine:3.21.3 AS backend-build
 
-# Runtime deps only
-RUN apk add --no-cache nodejs npm vnstat
+RUN apk add --no-cache nodejs npm
 
 WORKDIR /app/backend
 
@@ -29,9 +28,23 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
-# Copy the rest of backend and the built frontend
+# =====================
+# STAGE 3: Runtime (no npm, non-root)
+# =====================
+FROM alpine:3.21.3
+
+# Runtime deps only
+RUN apk add --no-cache nodejs vnstat \
+    && addgroup -S app && adduser -S -G app -H -h /app app
+
+WORKDIR /app/backend
+
+# Copy the backend with its production deps and the built frontend
+COPY --from=backend-build /app/backend/node_modules ./node_modules
 COPY backend/ ./
 COPY --from=frontend-build /app/frontend/build /app/frontend-build
+
+USER app
 
 ENV FRONTEND_DIR=frontend-build
 ENV PORT=8050
