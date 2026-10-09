@@ -1,8 +1,16 @@
 services:
   vnstat-dashboard:
-    image: kshitizb/vnstat-dashboard:latest
-    network_mode: host
-    privileged: true
+    build: .
+    image: vnstat-dashboard:latest
+    ports:
+      - "8050:8050"
     volumes:
       - /var/lib/vnstat:/var/lib/vnstat:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped

@@ -15,7 +15,7 @@ A sleek, responsive, containerized web dashboard to visualize network interface 
 - Responsive, dark-mode friendly UI
 - Dockerized for portability
 - Uses a single container for backend + frontend
-- **Automatic Interface Detection** – no hardcoded `eth0`, `wlan0` etc.
+- **Automatic Interface Detection** – reads the interfaces recorded in the vnStat database, no hardcoded `eth0`, `wlan0` etc.
 - Custom interface filtering via environment variables
 - Works on ARM (Raspberry Pi) and x86 systems
 
@@ -47,16 +47,20 @@ docker build -t vnstat-dashboard .
 
 ### 3. Run the Container
 
-Make sure to use `--privileged` so that `vnstat` inside the container can access system data:
+The container only needs read access to the host's vnStat database. It does not need `--privileged` or host networking, and runs as an unprivileged user:
 
 ```bash
 docker run -d \
   --name vnstat-dashboard \
-  --privileged \
-  --network host \
+  -p 8050:8050 \
   -v /var/lib/vnstat:/var/lib/vnstat:ro \
-  kshitizb/vnstat-dashboard
+  --read-only --tmpfs /tmp \
+  --cap-drop ALL \
+  --security-opt no-new-privileges:true \
+  vnstat-dashboard
 ```
+
+To keep the dashboard reachable from this machine only, publish the port as `-p 127.0.0.1:8050:8050`.
 
 ### 4. Access the Dashboard
 
@@ -75,18 +79,26 @@ A ready-to-use `docker-compose.yml` is included:
 ```yaml
 services:
   vnstat-dashboard:
-    image: kshitizb/vnstat-dashboard:latest
-    network_mode: host
-    privileged: true
+    build: .
+    image: vnstat-dashboard:latest
+    ports:
+      - "8050:8050"
     volumes:
       - /var/lib/vnstat:/var/lib/vnstat:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 ```
 
 Run with:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 ---
